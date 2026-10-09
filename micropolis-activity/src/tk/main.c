@@ -275,7 +275,7 @@ main(argc, argv)
 	XSynchronize(Tk_Display(w), True);
     }
     Tk_GeometryRequest(w, 200, 200);
-    border = Tk_Get3DBorder(interp, w, None, "#4eee94");
+    border = Tk_Get3DBorder(interp, w, "#4eee94");
     if (border == NULL) {
 	Tcl_SetResult(interp, (char *) NULL, TCL_STATIC);
 	Tk_SetWindowBackground(w, WhitePixelOfScreen(Tk_Screen(w)));

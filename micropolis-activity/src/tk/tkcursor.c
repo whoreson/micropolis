@@ -637,7 +637,7 @@ static void
 CursorInit()
 {
     initialized = 1;
-    Tcl_InitHashTable(&nameTable, sizeof(NameKey)/sizeof(long));
-    Tcl_InitHashTable(&dataTable, sizeof(DataKey)/sizeof(long));
+    Tcl_InitHashTable(&nameTable, sizeof(NameKey)/sizeof(int));
+    Tcl_InitHashTable(&dataTable, sizeof(DataKey)/sizeof(int));
     Tcl_InitHashTable(&idTable, TCL_ONE_WORD_KEYS);
 }
