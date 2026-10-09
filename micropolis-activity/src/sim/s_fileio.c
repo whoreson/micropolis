@@ -131,6 +131,7 @@ _load_short(short *buf, int len, FILE *f)
 }
 
 
+#if 0
 static int
 _load_long(long *buf, int len, FILE *f)
 {
@@ -141,6 +142,7 @@ _load_long(long *buf, int len, FILE *f)
 
   return 1;
 }
+#endif
 
 
 static int
@@ -158,6 +160,7 @@ _save_short(short *buf, int len, FILE *f)
 }
 
 
+#if 0
 static int
 _save_long(long *buf, int len, FILE *f)
 {
@@ -171,6 +174,7 @@ _save_long(long *buf, int len, FILE *f)
 
   return 1;
 }
+#endif
 
 
 static
@@ -374,9 +378,10 @@ int saveFile(char *filename)
 }
 
 
+void
 LoadScenario(short s)
 {
-  char *name, *fname;
+  char *name = NULL, *fname = NULL;
 
   if (CityFileName != NULL) {
     ckfree(CityFileName);
@@ -469,7 +474,8 @@ LoadScenario(short s)
 }
 
 
-DidLoadScenario()
+void
+DidLoadScenario(void)
 {
   Eval("UIDidLoadScenario");
 }
@@ -486,12 +492,12 @@ int LoadCity(char *filename)
     CityFileName = (char *)ckalloc(strlen(filename) + 1);
     strcpy(CityFileName, filename);
 
-    if (cp = (char *)rindex(filename, '.'))
+    if ((cp = (char *)rindex(filename, '.')))
       *cp = 0;
 #ifdef MSDOS
-    if (cp = (char *)rindex(filename, '\\'))
+    if ((cp = (char *)rindex(filename, '\\')))
 #else
-    if (cp = (char *)rindex(filename, '/'))
+    if ((cp = (char *)rindex(filename, '/')))
 #endif
       cp++;
     else
@@ -515,12 +521,14 @@ int LoadCity(char *filename)
 }
 
 
-DidLoadCity()
+void
+DidLoadCity(void)
 {
   Eval("UIDidLoadCity");
 }
 
 
+void
 DidntLoadCity(char *msg)
 {
   char buf[1024];
@@ -529,7 +537,8 @@ DidntLoadCity(char *msg)
 }
 
 
-SaveCity()
+void
+SaveCity(void)
 {
   char msg[256];
 
@@ -548,18 +557,21 @@ SaveCity()
 }
 
 
-DoSaveCityAs()
+void
+DoSaveCityAs(void)
 {
   Eval("UISaveCityAs");
 }
 
 
-DidSaveCity()
+void
+DidSaveCity(void)
 {
   Eval("UIDidSaveCity");
 }
 
 
+void
 DidntSaveCity(char *msg)
 {
   char buf[1024];
@@ -568,6 +580,7 @@ DidntSaveCity(char *msg)
 }
 
 
+void
 SaveCityAs(char *filename)
 {
   char msg[256];
@@ -579,12 +592,12 @@ SaveCityAs(char *filename)
   strcpy(CityFileName, filename);
 
   if (saveFile(CityFileName)) {
-    if (cp = (char *)rindex(filename, '.'))
+    if ((cp = (char *)rindex(filename, '.')))
       *cp = 0;
 #ifdef MSDOS
-    if (cp = (char *)rindex(filename, '\\'))
+    if ((cp = (char *)rindex(filename, '\\')))
 #else
-    if (cp = (char *)rindex(filename, '/'))
+    if ((cp = (char *)rindex(filename, '/')))
 #endif
       cp++;
     else

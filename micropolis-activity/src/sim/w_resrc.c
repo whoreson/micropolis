@@ -162,6 +162,7 @@ ResourceID(Handle h)
 }
 
 
+void
 GetIndString(char *str, int id, short num)
 {
   struct StringTable **tp, *st = NULL;

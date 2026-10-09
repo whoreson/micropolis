@@ -239,6 +239,7 @@ GetObjectXpms(XDisplay *xd, int id, int frames)
 }
 
 
+void
 GetPixmaps(XDisplay *xd)
 {
   if (xd->gray25_stipple == None) {
@@ -286,6 +287,7 @@ GetPixmaps(XDisplay *xd)
 }
 
 
+void
 GetViewTiles(SimView *view)
 {
   char name[256];
@@ -363,10 +365,9 @@ GetViewTiles(SimView *view)
       }
     }
 
-    { int x, y, b, tile;
+    { int x, y, tile;
       unsigned char *from, *to;
       int pixelBytes = view->pixel_bytes;
-      int rowBytes = view->x->small_tile_image->bytes_per_line;
       
       if (pixelBytes == 0) {
 	/* handle the case of monochrome display (8 bit map) */

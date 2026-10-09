@@ -91,7 +91,11 @@ unsigned char ColorIntensities[] = {
 	/* COLOR_BLACK */		0,
 };
 
+void FreeTiles(SimView *view);
+void AllocTiles(SimView *view);
+void DoAdjustPan(struct SimView *view);
 
+void
 ViewToTileCoords(SimView *view, int x, int y, int *outx, int *outy)
 {
   x = (view->pan_x - ((view->w_width >>1) - x)) >>4;
@@ -120,6 +124,7 @@ ViewToTileCoords(SimView *view, int x, int y, int *outx, int *outy)
 }
 
 
+void
 ViewToPixelCoords(SimView *view, int x, int y, int *outx, int *outy)
 {
   x = view->pan_x - ((view->w_width >>1) - x);
@@ -148,7 +153,8 @@ ViewToPixelCoords(SimView *view, int x, int y, int *outx, int *outy)
 }
 
 
-UpdateFlush()
+void
+UpdateFlush(void)
 {
   struct XDisplay *xd;
 
@@ -216,7 +222,8 @@ printf("GOT X ERROR code %d request code %d %d\n",
 }
 
 
-DoStopMicropolis()
+void
+DoStopMicropolis(void)
 {
   (void)XSetErrorHandler(CatchXError);
 
@@ -244,7 +251,8 @@ DoStopMicropolis()
 }
 
 
-DoTimeoutListen()
+void
+DoTimeoutListen(void)
 {
   while (Tk_DoOneEvent(TK_DONT_WAIT)) ;
 }
@@ -273,10 +281,7 @@ XDisplay *
 FindXDisplay(Tk_Window tkwin)
 {
   XDisplay *xd;
-  int d = 8;
-  unsigned long valuemask = 0;
-  XGCValues values;
-  XColor rgb, *color;
+  XColor *color;
   Display *dpy = Tk_Display(tkwin);
   Screen *screen = Tk_Screen(tkwin);
 #ifdef IS_LINUX
@@ -486,12 +491,14 @@ FindXDisplay(Tk_Window tkwin)
 }
 
 
+void
 IncRefDisplay(XDisplay *xd)
 {
   xd->references++;
 }
 
 
+void
 DecRefDisplay(XDisplay *xd)
 {
   if ((--xd->references) == 0) {
@@ -601,6 +608,10 @@ InitNewView(SimView *view, char *title, int class, int w, int h)
 
   view->x->needs_swap = !(*(unsigned char*) (&test));
   view->x->x_big_endian = (ImageByteOrder(view->x->dpy) == MSBFirst);
+
+  view->x->needs_swap = !(*(unsigned char*) (&test));
+  view->x->x_big_endian = (ImageByteOrder(view->x->dpy) == MSBFirst);
+
 
   GetPixmaps(view->x);
   view->pixels = view->x->pixels;
@@ -723,6 +734,7 @@ AllocPixels(int len, unsigned char pixel)
 }
 
 
+void
 DoResizeView(SimView *view, int w, int h)
 {
   int resize = 0;
@@ -902,7 +914,7 @@ DoResizeView(SimView *view, int w, int h)
     }
 
     view->data = (unsigned char *)shmat(view->shminfo->shmid, 0, 0);
-    if ((int)view->data == -1) {
+    if ((char*)view->data == (char*)-1) {
       perror("shmat");
       fprintf(stderr,
 	      "Darn, Micropolis can't find any memory to share with display \"%s\".\n",
@@ -1165,7 +1177,7 @@ DoResizeView(SimView *view, int w, int h)
 	  view->pixel_bytes = 2;
 	  view->depth = 16;
 	  bitmap_pad = 16;
-	  bitmap_depth = 16;
+	  bitmap_depth = 15;
 	  view->line_bytes8 =
 	    ((view->m_width * view->pixel_bytes) + 3) & (~3);
 	  break;
@@ -1273,12 +1285,12 @@ DoPanTo(struct SimView *view, int x, int y)
 
 /* #define DEBUG_PAN */
 
+void
 DoAdjustPan(struct SimView *view)
 {
   int ww2 = view->w_width >>1, wh2 = view->w_height >>1;
   int px = view->pan_x, py = view->pan_y;
   int last_tile_x = view->tile_x, last_tile_y = view->tile_y;
-  int last_tile_width = view->tile_width, last_tile_height = view->tile_height;
   int total_width = view->m_width >>4, total_height = view->m_height >>4;
 //fprintf(stderr, "DoAdjustPan\n");
 
@@ -1391,6 +1403,7 @@ DoAdjustPan(struct SimView *view)
 }
 
 
+void
 AllocTiles(SimView *view)
 {
   int row, col;
@@ -1422,6 +1435,7 @@ AllocTiles(SimView *view)
 }
 
 
+void
 FreeTiles(SimView *view)
 {
   int col;
@@ -1466,6 +1480,7 @@ NewInk()
 }
 
 
+void
 FreeInk(Ink *ink)
 {
   ink->next = OldInk;
@@ -1473,6 +1488,7 @@ FreeInk(Ink *ink)
 }
 
 
+void
 StartInk(Ink *ink, int x, int y)
 {
   ink->length = 1;
@@ -1481,6 +1497,7 @@ StartInk(Ink *ink, int x, int y)
 }
 
 
+void
 AddInk(Ink *ink, int x, int y)
 {
   int dx = x - ink->last_x;
@@ -1514,7 +1531,7 @@ AddInk(Ink *ink, int x, int y)
     ink->points[ink->length].y = dy;
     ink->length++;
 
-  ADJUST:
+  /* ADJUST: */
     if (x < ink->left)
       ink->left = x;
     if (x > ink->right)
@@ -1552,7 +1569,8 @@ AddInk(Ink *ink, int x, int y)
 }
 
 
-EraseOverlay()
+void
+EraseOverlay(void)
 {
   Ink *ink;
 

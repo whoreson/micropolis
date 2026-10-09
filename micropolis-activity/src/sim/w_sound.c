@@ -1,3 +1,7 @@
+/* 
+ * Portions Copyright (c) 2008 Deanna Phillips <deanna@sdf.lonestar.org>
+ */
+
 /* w_sound.c
  *
  * Micropolis, Unix Version.  This game was released for the Unix platform
@@ -59,103 +63,331 @@
  * CONSUMER, SO SOME OR ALL OF THE ABOVE EXCLUSIONS AND LIMITATIONS MAY
  * NOT APPLY TO YOU.
  */
+#ifdef WITH_SDL_MIXER
+#include "SDL.h"
+#include "SDL_mixer.h"
+#endif
+
 #include "sim.h"
 
 
+#define SIM_NSOUNDS	47
+#define SIM_NCHANNELS	32
+#define DOZER_CHANNEL	0
+#define DOZER_SOUND	"rumble.wav"
+
+struct sound {
+  char *id;
+  char *file;
+#ifdef WITH_SDL_MIXER
+  Mix_Chunk *wave;
+#else
+  void *wave;
+#endif
+};
+
+struct sound sounds[SIM_NSOUNDS] = {
+  { "A",		"a.wav",		NULL },
+  { "Aaah",		"aaah.wav",		NULL },
+  { "Airport",		"airport.wav",		NULL },
+  { "Beep",		"beep.wav",		NULL },
+  { "Boing",		"boing.wav",		NULL },
+  { "Bop",		"bop.wav",		NULL },
+  { "Build",		"build.wav",		NULL },
+  { "Bulldozer",	"bulldozer.wav",	NULL },
+  { "Chalk",		"chalk.wav",		NULL },
+  { "Coal",		"coal.wav",		NULL },
+  { "Com",		"com.wav",		NULL },
+  { "Computer",		"computer.wav",		NULL },
+  { "Cuckoo",		"cuckoo.wav",		NULL },
+  { "E",		"e.wav",		NULL },
+  { "Eraser",		"eraser.wav",		NULL },
+  { "Explosion-High",	"explosion-high.wav",	NULL },
+  { "Explosion-Low",	"explosion-low.wav",	NULL },
+  { "Fire",		"fire.wav",		NULL },
+  { "HeavyTraffic",	"heavytraffic.wav",	NULL },
+  { "HonkHonk-High",	"honkhonk-high.wav",	NULL },
+  { "HonkHonk-Low",	"honkhonk-low.wav",	NULL },
+  { "HonkHonk-Med",	"honkhonk-med.wav",	NULL },
+  { "Ignition",		"ignition.wav",		NULL },
+  { "Ind",		"ind.wav",		NULL },
+  { "Monster",		"monster.wav",		NULL },
+  { "Nuclear",		"nuclear.wav",		NULL },
+  { "O",		"o.wav",		NULL },
+  { "Oop",		"oop.wav",		NULL },
+  { "Park",		"park.wav",		NULL },
+  { "Player",		"player.wav",		NULL },
+  { "Police",		"police.wav",		NULL },
+  { "QuackQuack",	"quackquack.wav",	NULL },
+  { "Query",		"query.wav",		NULL },
+  { "Rail",		"rail.wav",		NULL },
+  { "Res",		"res.wav",		NULL },
+  { "Road",		"road.wav",		NULL },
+  { "Rumble",		"rumble.wav",		NULL },
+  { "Seaport",		"seaport.wav",		NULL },
+  { "Siren",		"siren.wav",		NULL },
+  { "Skid",		"skid.wav",		NULL },
+  { "Sorry",		"sorry.wav",		NULL },
+  { "Stadium",		"stadium.wav",		NULL },
+  { "UhUh",		"uhuh.wav",		NULL },
+  { "Whip",		"whip.wav",		NULL },
+  { "Wire",		"wire.wav",		NULL },
+  { "Woosh",		"woosh.wav",		NULL },
+  { "Zone",		"zone.wav",		NULL }
+};
+
+static int SoundInitialized = 0;
+
+#ifdef WITH_SDL_MIXER
 /* Sound routines */
 
 
-int SoundInitialized = 0;
-short Dozing;
+Mix_Chunk *rumble;
 
 
-InitializeSound()
+void
+InitializeSound(void)
 {
-  char cmd[256];
+  int reserved_chans;
+  char buf[256];
+
+  if (SDL_Init(SDL_INIT_AUDIO) == -1) {
+    fprintf(stderr, "SDL_Init: %s\n", SDL_GetError());
+    return;
+  }
+
+  if (Mix_OpenAudio(22050, MIX_DEFAULT_FORMAT, 1, 1024) == -1) {
+    fprintf(stderr, "Mix_OpenAudio: %s\n", Mix_GetError());
+    return;
+  }
+
+  reserved_chans = Mix_ReserveChannels(1);
+
+  if (reserved_chans != 1) {
+    fprintf(stderr, "Mix_ReserveChannels: %s\n", Mix_GetError());
+    return;
+  }
+
+  if (Mix_AllocateChannels(SIM_NCHANNELS) == -1) {
+    fprintf(stderr, "Mix_AllocateChannels: %s\n", Mix_GetError());
+    return;
+  }
+
+  snprintf(buf, sizeof(buf), "%s/sounds/%s", ResourceDir, DOZER_SOUND);
+  rumble = Mix_LoadWAV(buf);
+
+  if (rumble == NULL) {
+    printf("Mix_LoadWAV: %s\n", Mix_GetError());
+    return;
+  }
 
   SoundInitialized = 1;
-
-  if (!UserSoundOn) return;
-
-  Eval("UIInitializeSound");
 }
 
 
+void
 ShutDownSound()
 {
-  if (SoundInitialized) {
-    SoundInitialized = 0;
-    Eval("UIShutDownSound");
+  int i;
+  SoundInitialized = 0;
+
+  for (i = 0; i < SIM_NSOUNDS; i++) {
+    if (sounds[i].wave) {
+      Mix_FreeChunk(sounds[i].wave);
+      sounds[i].wave = NULL;
+    }
   }
+  if (rumble) {
+    Mix_FreeChunk(rumble);
+    rumble = NULL;
+  }
+  Mix_CloseAudio();
+  SDL_Quit();
 }
 
 
+void
 MakeSound(char *channel, char *id)
 {
   char buf[256];
+  int i;
 
   if (!UserSoundOn) return;
-  if (!SoundInitialized) InitializeSound();
+  if (!SoundInitialized) return;
 
-  sprintf(buf, "UIMakeSound \"%s\" \"%s\"", channel, id);
-  Eval(buf);
+  for (i = 0; i < SIM_NSOUNDS; i++) {
+    if (!strcmp(sounds[i].id, id))
+      break;
+  }
+  
+  if (sounds[i].wave) {
+    if (Mix_PlayChannel(-1, sounds[i].wave, 0) == -1)
+      fprintf(stderr, "Mix_PlayChannel: %s\n", Mix_GetError());
+    return;
+  }
+
+  snprintf(buf, sizeof(buf), "%s/sounds/%s", ResourceDir,
+	   sounds[i].file);
+
+  sounds[i].wave = Mix_LoadWAV(buf);
+
+  if (sounds[i].wave == NULL) {
+    fprintf(stderr, "Mix_LoadWAV: %s\n", Mix_GetError());
+    return;
+  }
+
+  if (Mix_PlayChannel(-1, sounds[i].wave, 0) == -1)
+    fprintf(stderr, "Mix_PlayChannel: %s\n", Mix_GetError());
 }
 
-
-MakeSoundOn(SimView *view, char *channel, char *id)
-{
-  char buf[256];
-
-  if (!UserSoundOn) return;
-  if (!SoundInitialized) InitializeSound();
-
-  sprintf(buf, "UIMakeSoundOn %s \"%s\" \"%s\"",
-	  Tk_PathName(view->tkwin), channel, id);
-  Eval(buf);
-}
-
-
+void
 StartBulldozer(void)
 {
   if (!UserSoundOn) return;
-  if (!SoundInitialized) InitializeSound();
-  if (!Dozing) {
-    DoStartSound("edit", "1");
-    Dozing = 1;
+  if (!SoundInitialized) return;
+
+  if (Mix_PlayChannel(DOZER_CHANNEL, rumble, 4) == -1) {
+    printf("Mix_PlayChannel: %s\n", Mix_GetError());
+    return;
   }
 }
 
 
+void
 StopBulldozer(void)
 {
-  if ((!UserSoundOn) || (!SoundInitialized)) return;
-  DoStopSound("1");
-  Dozing = 0;
+  if (!UserSoundOn) return;
+  if (!SoundInitialized) return;
+
+  Mix_HaltChannel(DOZER_CHANNEL);
+}
+
+#else /* WITH_SDL_MIXER */
+void
+InitializeSound()
+{
+  SoundInitialized = 1;
+}
+
+void
+ShutDownSound()
+{
+  SoundInitialized = 0;
+}
+
+void
+MakeSound(char *channel, char *id)
+{
+  char filename[256], player[256];
+  static struct timeval last = {0, 0};
+  struct timeval now;
+  unsigned int diff;
+  int i;
+  pid_t pid;
+
+  gettimeofday(&now, NULL);
+
+  diff = ((now.tv_sec - last.tv_sec) * 1000000) +
+    (now.tv_usec - last.tv_usec);
+  
+  if (diff < 100000)
+    return;
+
+  last = now;
+
+  if (!UserSoundOn) return;
+  if (!SoundInitialized) return;
+
+  for (i = 0; i < SIM_NSOUNDS; i++) {
+    if (!strcmp(sounds[i].id, id))
+      break;
+  }
+ 
+  snprintf(filename, sizeof(filename), "%s/sounds/%s", ResourceDir,
+	   sounds[i].file);
+
+  snprintf(player, sizeof(player), "%s/sounds/player", ResourceDir);
+
+  pid = fork();
+
+  switch(pid) {
+    case 0:
+      execl(player, player, filename, NULL);
+      exit(1);
+      break;
+    case -1:
+      perror("fork failed");
+      break;
+    default:
+      break;
+  }
+}
+
+void
+StartBulldozer(void)
+{
+  MakeSound(0, "Rumble");
+}
+
+void
+StopBulldozer(void)
+{
+}
+#endif
+
+
+void
+MakeSoundOn(SimView *view, char *channel, char *id)
+{
+  if (!UserSoundOn) return;
+  if (!SoundInitialized) return;
+
+  MakeSound(channel, id);
 }
 
 
-/* comefrom: doKeyEvent */
+/* XXX comefrom: doKeyEvent */
+void
 SoundOff(void)
 {
-  if (!SoundInitialized) InitializeSound();
-  Eval("UISoundOff");
-  Dozing = 0;
+  ShutDownSound();
 }
 
 
+void
 DoStartSound(char *channel, char *id)
 {
-  char buf[256];
-
-  sprintf(buf, "UIStartSound %s %s", channel, id);
-  Eval(buf);
+  MakeSound(channel, id);
 }
 
-
+void
 DoStopSound(char *id)
 {
-  char buf[256];
+  StopBulldozer();
+}
 
-  sprintf(buf, "UIStopSound %s", id);
-  Eval(buf);
+int
+SoundCmd(CLIENT_ARGS)
+{
+  if (!strcmp(argv[2], "Rumble"))
+    StartBulldozer();
+  else
+    MakeSound(NULL, argv[2]);
+  return 0;
+}
+
+int
+DozerCmd(CLIENT_ARGS)
+{
+  StopBulldozer();
+  return 0;
+}
+
+void
+sound_command_init(void)
+{
+  Tcl_CreateCommand(tk_mainInterp, "playsound", SoundCmd,
+		    (ClientData)NULL, (void (*)()) NULL);
+  Tcl_CreateCommand(tk_mainInterp, "stopdozer", DozerCmd,
+		    (ClientData)NULL, (void (*)()) NULL);
 }
