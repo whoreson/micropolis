@@ -986,11 +986,6 @@ proc UIStartSound {chan sound {opts ""}} {
 }
 
 
-proc UIStopSound {chan sound {opts ""}} {
-  UIDoSound "sound stop $sound"
-}
-
-
 proc SetupSoundServer {win} {
   AddSoundServer $win
 }
@@ -2543,7 +2538,7 @@ proc EditorToolUp {w x y} {
 
   case [$w ToolState] in \
     7 { # bulldozer
-     UIStopSoundOn $w edit 1
+      stopdozer
     } \
     10 { # chalk
       StopChalk $w
@@ -3161,7 +3156,7 @@ proc ShowScenarioOf {head} {
 
 
 proc WithdrawScenarioOf {head} {
-  set win WindowLink $head.scenario]
+  set win [WindowLink $head.scenario]
   if {$win != {}} {
     wm withdraw $win
   }

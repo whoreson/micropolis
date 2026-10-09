@@ -63,7 +63,7 @@ set n [Unique]
 set win .head$n
 
 catch "destroy $win"
-if {[catch "toplevel $win -screen $display"]} {
+if {[catch "toplevel $win -screen $display" errMsg]} {
   puts stderr "Couldn't open X11 display \"$display\"."
   set win ""
   return ""
