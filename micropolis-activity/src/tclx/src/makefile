@@ -45,6 +45,7 @@ all: made.tmp ../tcl
 
 made.tmp: $(OBJS) $(CPLUSOBJS)
 	$(AR) cr ../libtcl.a $(OBJS) $(CPLUSOBJS)
+	$(RANLIB_CMD) ../libtcl.a
 	touch made.tmp
 
 tclxstup.o: patchlvl.h tclxstup.c

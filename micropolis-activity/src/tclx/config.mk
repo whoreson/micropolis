@@ -50,17 +50,17 @@ TCL_UCB_DIR=../tcl
 # source.  If TCL_TK_SHELL is define, Tk manual pages will be installed by the
 # install script.
 #
-TCL_TK_SHELL=wish
+#TCL_TK_SHELL=wish
 TCL_TK_DIR=../tk
 TK_LIBRARY=/usr/local/lib/tk
-XPM_LIBS=-L/usr/X11R6/lib -lXpm 
+XPM_LIBS=-L/usr/local/lib -lXpm 
 
 #------------------------------------------------------------------------------
 # Compiler debug/optimization/profiling flag to use.  Not that if debugging or
 # profiling is enabled, the DO_STRIPPING option below must be disabled.
 #
 
-CC=gcc
+#CC=gcc
 
 OPTIMIZE_FLAG=-O3 -DIS_LINUX
 #OPTIMIZE_FLAG=-g -DIS_LINUX

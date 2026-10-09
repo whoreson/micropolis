@@ -1,5 +1,5 @@
-XINCLUDE = /usr/X11R6/include/X11
-XLIB = /usr/X11R6/lib
+XINCLUDE = /usr/local/include
+XLIB = /usr/local/lib
 TCLHOME = ../tcl
 TKHOME = ../tk
 TCLXHOME = ../tclx
@@ -16,13 +16,12 @@ DEFINES = -DIS_LINUX -DNO_AIRCRASH
 
 CFLAGS = $(OPTFLAGS) $(DEFINES)
 
-LDFLAGS = -L/usr/X11/lib -L/usr/X11R6/lib
+LDFLAGS = -L/usr/local/lib
 
 INSTALL = install -s
 
 INCLUDES = \
 	-Iheaders \
-	-I$(XPMHOME) \
 	-I$(XINCLUDE) \
 	-I$(TCLHOME) \
 	-I$(TCLXHOME)/src \
@@ -33,7 +32,7 @@ CPPFLAGS = $(INCLUDES)
 LIBS =	$(TCLXHOME)/libtk.a \
 	$(TCLXHOME)/libtcl.a \
 	-lm \
-	-L$(XLIB) \
+	-L/usr/local/lib \
         -lX11 \
         -lXext \
 	-lXpm
@@ -98,12 +97,24 @@ all: sim
 lint:
 	alint $(INCLUDES) $(SRCS) > LINT
 
+$(TCLHOME)/libtcl.a:
+	(cd $(TCLHOME); gmake libtcl.a)
+
+$(TKHOME)/libtk.a: $(TCLHOME)/libtcl.a
+	(cd $(TKHOME); gmake libtk.a)
+
+$(TCLXHOME)/libtcl.a: $(TCLHOME)/libtcl.a
+	(cd $(TCLXHOME); gmake)
+
+$(TCLXHOME)/libtk.a: $(TKHOME)/libtk.a
+	cp $(TKHOME)/libtk.a $(TCLXHOME)/libtk.a
+
 sim: $(ALLOBJS) $(TCLXHOME)/libtk.a $(TCLXHOME)/libtcl.a
 	$(CC) $(CFLAGS) $(LDFLAGS) $(INCLUDES) $(ALLOBJS) $(LIBS) -o sim
 
 clean:
 	rm -f $(OBJS) \
-		sim a.out core gmon.out *~ *.BAK Headers/*~
+	 sim a.out core gmon.out *~ *.BAK Headers/*~
 
 etags:
 	etags $(SRCS) $(HEADERS)
